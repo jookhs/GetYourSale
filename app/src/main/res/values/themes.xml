@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <style name="Theme.GetYourSale" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:statusBarColor">#0A0A0A</item>
+    </style>
+    <style name="Theme.SplashScreenTheme" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/white</item>
+        <item name="windowSplashScreenAnimatedIcon">@mipmap/get_your_sale</item>
+        <item name="windowSplashScreenAnimationDuration">300</item>
+        <item name="postSplashScreenTheme">@style/Theme.GetYourSale</item>
+    </style>
+</resources>
