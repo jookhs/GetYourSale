@@ -2,7 +2,7 @@
 <resources>
 
     <style name="Theme.GetYourSale" parent="android:Theme.Material.Light.NoActionBar">
-        <item name="android:statusBarColor">#0A0A0A</item>
+        <item name="android:statusBarColor">#000000</item>
     </style>
     <style name="Theme.SplashScreenTheme" parent="Theme.SplashScreen">
         <item name="windowSplashScreenBackground">@color/white</item>
