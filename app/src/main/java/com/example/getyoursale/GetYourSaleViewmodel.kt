@@ -1,15 +1,23 @@
 package com.example.getyoursale
 
+import android.annotation.SuppressLint
+import android.content.SharedPreferences
 import android.graphics.drawable.GradientDrawable
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.toLowerCase
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavHostController
+import com.google.firebase.database.DatabaseReference
+import com.google.firebase.database.ktx.database
+import com.google.firebase.ktx.Firebase
 
-class GetYourSaleViewModel: ViewModel() {
-    private var _nextEnabled =  mutableStateOf(false)
+const val SELECTED_CARDS = "selected cards"
+
+class GetYourSaleViewModel : ViewModel() {
+    private var _nextEnabled = mutableStateOf(false)
     val nextEnabled: State<Boolean> = _nextEnabled
     private var _selectedCards = mutableStateOf(listOf<String>())
     val selectedCards: State<List<String>> = _selectedCards
@@ -30,6 +38,53 @@ class GetYourSaleViewModel: ViewModel() {
     val orientation: State<Int> = _orientation
     private var _requestedOrientation = mutableStateOf(0)
     val requestedOrientation: State<Int> = _requestedOrientation
+    private var _firstInstall = mutableStateOf(true)
+    val firstInstall: State<Boolean> = _firstInstall
+    var preferences: SharedPreferences? = null
+    private var _isConnected = mutableStateOf(true)
+    val isConnected: State<Boolean> = _isConnected
+    var retryNetwork: () -> Unit = {}
+    var notificationMessage: String? = null
+    private var _notifications = mutableStateOf(listOf<Notification>())
+    val notifications: State<List<Notification>> = _notifications
+    private var _notificationsOpened = mutableStateOf(false)
+    val notificationsOpened: State<Boolean> = _notificationsOpened
+
+    fun setNotificationsOpened(opened: Boolean) {
+        _notificationsOpened.value = opened
+    }
+
+    fun addToNotifications(notification: Notification) {
+        _notifications.value = _notifications.value.toMutableList().apply {
+            add(notification)
+        }
+        val notificationNames = mutableListOf<String>()
+        notifications.value.forEach {
+            notificationNames.add(it.name)
+        }
+    }
+
+    private fun removeFromNotificationsListIfNeeded(name: String) {
+        _notifications.value.forEach {
+            if (it.name.contains(name)) {
+                _notifications.value = _notifications.value.toMutableList().apply {
+                    remove(it)
+                }
+            }
+        }
+        val notificationNames = mutableListOf<String>()
+        notifications.value.forEach {
+            notificationNames.add(it.name)
+        }
+    }
+
+    fun setIsConnected(isConnected: Boolean) {
+        _isConnected.value = isConnected
+    }
+
+    fun postFirstInstall(firstInstall: Boolean) {
+        _firstInstall.value = firstInstall
+    }
 
     fun getOffersForBrand(name: String): List<Offer> {
         val offers = mutableListOf<Offer>()
@@ -80,31 +135,36 @@ class GetYourSaleViewModel: ViewModel() {
         _nextEnabled.value = _selectedCards.value.isNotEmpty()
     }
 
-    fun postBrandsToList(brand: Brand) {
-        _brandList.value = _brandList.value.toMutableList().apply {
-            if (!this.contains(brand)) {
-                add(brand)
-            }
-        }
+    fun postBrandsToList(brands: List<Brand>) {
+        _brandList.value = brands
     }
 
-    fun postOffersToList(offer: Offer) {
-        _offersList.value = _offersList.value.toMutableList().apply {
-            add(offer)
-        }
+    fun postNotificationsToList(notifications: List<Notification>) {
+        _notifications.value = notifications
     }
 
+    fun postOffersToList(offers: List<Offer>) {
+        _offersList.value = offers
+    }
+
+    @SuppressLint("CommitPrefEdits")
     fun addToSelectedCards(name: String) {
         if (_selectedCards.value.contains(name)) {
             _selectedCards.value = _selectedCards.value.toMutableList().apply {
                 remove(name)
             }
+            removeFromNotificationsListIfNeeded(name)
+
         } else {
             _selectedCards.value = _selectedCards.value.toMutableList().apply {
                 add(name)
             }
         }
         postNextEnabled()
+    }
+
+    fun saveSelectedCards() {
+        preferences?.edit()?.putStringSet(SELECTED_CARDS, selectedCards.value.toSet())?.apply()
     }
 
     fun getSelectedBrands(): List<Brand> {

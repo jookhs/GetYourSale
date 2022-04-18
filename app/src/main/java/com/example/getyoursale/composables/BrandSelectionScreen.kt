@@ -5,6 +5,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
@@ -19,6 +21,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
@@ -47,9 +50,10 @@ fun BrandCard(image: String, name: String, viewModel: GetYourSaleViewModel) {
         Card(
             onClick = {
                 viewModel.addToSelectedCards(name)
+                viewModel.saveSelectedCards()
             },
             border = BorderStroke(cardBorder.dp, borderColor),
-            elevation = 3.dp,
+            elevation = if (viewModel.selectedCards.value.contains(name)) 18.dp else 3.dp,
             backgroundColor = MaterialTheme.colors.primary
         ) {
             Image(
@@ -62,19 +66,18 @@ fun BrandCard(image: String, name: String, viewModel: GetYourSaleViewModel) {
                 ),
                 contentDescription = name,
                 contentScale = ContentScale.Crop,
-                colorFilter = if (viewModel.selectedCards.value.contains(name)) ColorFilter.tint(
-                    Color.LightGray,
-                    BlendMode.Multiply
-                ) else null,
-                modifier = Modifier.size((screenWidth - 48.dp) / 2).background(color = MaterialTheme.colors.primary)
+                modifier = Modifier
+                    .size((screenWidth - 48.dp) / 2)
+                    .background(color = MaterialTheme.colors.primary)
             )
         }
         Spacer(modifier = Modifier.height(10.dp))
         Text(
-            text = name,
+            text = if (viewModel.selectedCards.value.contains(name)) "$name ▪" else name,
             modifier = Modifier.fillMaxSize(),
             textAlign = TextAlign.Left,
-            color = if (viewModel.selectedCards.value.contains(name)) Color.LightGray else Color.Unspecified
+            color = MaterialTheme.colors.secondary,
+            fontWeight = if (viewModel.selectedCards.value.contains(name)) FontWeight.Bold else null
         )
     }
 }
@@ -97,27 +100,70 @@ fun Cards(list: List<Brand>, viewModel: GetYourSaleViewModel) {
 
 @Composable
 fun Next(viewModel: GetYourSaleViewModel) {
-    Row(modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp).background(color = MaterialTheme.colors.primaryVariant), horizontalArrangement = Arrangement.SpaceBetween) {
-        Text ("Select Brands  ✨", fontSize = 22.sp, color = Color.White, modifier = Modifier.padding(start = 16.dp, bottom = 16.dp, top = 16.dp).align(
-            Alignment.CenterVertically), fontWeight = FontWeight.SemiBold)
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(bottom = 16.dp)
+            .background(color = MaterialTheme.colors.primaryVariant),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(
+            "Select Brands  ✨",
+            fontSize = 22.sp,
+            color = MaterialTheme.colors.primary,
+            modifier = Modifier
+                .padding(start = 16.dp, bottom = 16.dp, top = 16.dp)
+                .align(
+                    Alignment.CenterVertically
+                ),
+            fontWeight = FontWeight.SemiBold
+        )
         IconButton(
             enabled = viewModel.nextEnabled.value,
-            onClick = { viewModel.navHostController?.navigate(Screen.SetUp.name) }, modifier = Modifier.align(
-                Alignment.CenterVertically)) {
-            Icon(Icons.Filled.ArrowForward, contentDescription = "Next", tint = if (viewModel.nextEnabled.value) Color.White else Color.DarkGray)
+            onClick = { viewModel.navHostController?.navigate(Screen.SetUp.name) },
+            modifier = Modifier.align(
+                Alignment.CenterVertically
+            )
+        ) {
+            Icon(
+                Icons.Filled.ArrowForward,
+                contentDescription = "Next",
+                tint = if (viewModel.nextEnabled.value) MaterialTheme.colors.primary else MaterialTheme.colors.background
+            )
         }
     }
 }
 
 @Composable
 fun Done(viewModel: GetYourSaleViewModel) {
-    Row(modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp).background(color = MaterialTheme.colors.primaryVariant), horizontalArrangement = Arrangement.SpaceBetween) {
-        Text ("Select Brands  ✨", fontSize = 22.sp, color = Color.White, modifier = Modifier.padding(start = 16.dp, bottom = 16.dp, top = 16.dp).align(
-            Alignment.CenterVertically), fontWeight = FontWeight.SemiBold)
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(bottom = 16.dp)
+            .background(color = MaterialTheme.colors.primaryVariant),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(
+            "Select Brands  ✨",
+            fontSize = 22.sp,
+            color = MaterialTheme.colors.primary,
+            modifier = Modifier
+                .padding(start = 16.dp, bottom = 16.dp, top = 16.dp)
+                .align(
+                    Alignment.CenterVertically
+                ),
+            fontWeight = FontWeight.SemiBold
+        )
         IconButton(
             onClick = { viewModel.navHostController?.popBackStack() }, modifier = Modifier.align(
-                Alignment.CenterVertically)) {
-            Icon(Icons.Filled.Done, contentDescription = "Done", tint =  Color.White)
+                Alignment.CenterVertically
+            )
+        ) {
+            Icon(
+                Icons.Filled.Done,
+                contentDescription = "Done",
+                tint = MaterialTheme.colors.primary
+            )
         }
     }
 }
@@ -144,5 +190,3 @@ fun EditPreview(viewModel: GetYourSaleViewModel) {
 }
 
 
-
-data class Brand(val image: String, val name: String)

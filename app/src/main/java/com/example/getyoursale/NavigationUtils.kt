@@ -7,6 +7,6 @@ sealed class Screen(val name: String) {
     object SetUp: Screen(name = "SetUp")
     object HomePage: Screen(name = "Home")
     object BrandScreen: Screen(name = "Brand")
-    object SaleScreen: Screen(name = "Sale")
-
+    object NoNetworkScreen: Screen(name = "NoNetWork")
+    object OfferScreen: Screen(name = "Offer")
 }

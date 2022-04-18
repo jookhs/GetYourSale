@@ -11,32 +11,28 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.onFocusChanged
-import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.platform.LocalSoftwareKeyboardController
-import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.modifier.ModifierLocalReadScope
+import androidx.compose.ui.platform.*
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.annotation.ExperimentalCoilApi
 import coil.compose.rememberImagePainter
 import com.google.accompanist.pager.ExperimentalPagerApi
 import com.google.accompanist.pager.HorizontalPager
@@ -57,8 +53,8 @@ fun HomeScreen(viewModel: GetYourSaleViewModel) {
                 1 -> Favorites(viewModel)
                 2 -> Notifications(viewModel)
             }
-
         }
+        Spacer(modifier = Modifier.height(10.dp))
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -84,8 +80,13 @@ fun Tabs(viewModel: GetYourSaleViewModel) {
         tabData.forEachIndexed { index, icon ->
             Tab(selected = viewModel.tabIndex.value == index, onClick = {
                 viewModel.setTabIndex(index)
+                if (index == 2) {
+                    viewModel.setNotificationsOpened(true)
+                }
             }, icon = {
-                Icon(imageVector = icon, contentDescription = null)
+                BadgedBox(badge = { if (viewModel.notifications.value.isNotEmpty() && index == 2 && viewModel.tabIndex.value != index && !viewModel.notificationsOpened.value) Text(text = "\uD83D\uDD34", fontSize = 6.sp) else {} }) {
+                    Icon(imageVector = icon, contentDescription = null)
+                }
             })
         }
     }
@@ -94,13 +95,22 @@ fun Tabs(viewModel: GetYourSaleViewModel) {
 @OptIn(ExperimentalMaterialApi::class, coil.annotation.ExperimentalCoilApi::class)
 @Composable
 fun BrandCardHome(image: String, name: String, viewModel: GetYourSaleViewModel) {
+    val uriHandler = LocalUriHandler.current
     val screenWidth = LocalConfiguration.current.screenWidthDp.dp
+    //url from backend
+    val urlParam =
+        "https://www.zara.com/am/en/kids-editorial-10-l313.html?v1=2019990&utm_source=newsletter&utm_medium=email&utm_campaign=2022_04_05_Kids_Latitude_Norte"
     Column(modifier = Modifier.padding(start = 8.dp, bottom = 8.dp, end = 8.dp, top = 8.dp)) {
         Spacer(modifier = Modifier.height(15.dp))
         Card(
             onClick = {
-                viewModel.setSelectedBrandName(name)
-                viewModel.navHostController?.navigate(Screen.BrandScreen.name)
+                if (viewModel.selectedBrandName.value == name) {
+                    uriHandler.openUri(urlParam)
+                    viewModel.setSelectedBrandName(name)
+                } else {
+                    viewModel.setSelectedBrandName(name)
+                    viewModel.navHostController?.navigate(Screen.BrandScreen.name)
+                }
             },
             elevation = 3.dp
         ) {
@@ -121,7 +131,8 @@ fun BrandCardHome(image: String, name: String, viewModel: GetYourSaleViewModel) 
         Text(
             text = name,
             modifier = Modifier.fillMaxSize(),
-            textAlign = TextAlign.Left
+            textAlign = TextAlign.Left,
+            color = MaterialTheme.colors.secondary
         )
     }
 }
@@ -133,8 +144,12 @@ fun BrandCardHome(image: String, name: String, viewModel: GetYourSaleViewModel) 
 @Composable
 fun HomePage(viewModel: GetYourSaleViewModel) {
     val pagerState = rememberPagerState(viewModel.offersList.value.size)
-    val columnModifier = if (viewModel.orientation.value == Configuration.ORIENTATION_LANDSCAPE && viewModel.requestedOrientation.value == ActivityInfo.SCREEN_ORIENTATION_USER) Modifier.verticalScroll(rememberScrollState()) else Modifier
-    Column (modifier = columnModifier) {
+    val uriHandler = LocalUriHandler.current
+    val columnModifier =
+        if (viewModel.orientation.value == Configuration.ORIENTATION_LANDSCAPE && viewModel.requestedOrientation.value == ActivityInfo.SCREEN_ORIENTATION_USER) Modifier.verticalScroll(
+            rememberScrollState()
+        ) else Modifier
+    Column(modifier = columnModifier) {
         SearchView(viewModel)
         Row(
             modifier = Modifier
@@ -142,7 +157,12 @@ fun HomePage(viewModel: GetYourSaleViewModel) {
                 .padding(top = 28.dp, start = 10.dp, bottom = 16.dp),
             horizontalArrangement = Arrangement.Start
         ) {
-            Text(fontSize = 25.sp, text = "Hot Offers \uD83D\uDD25", fontWeight = FontWeight.SemiBold)
+            Text(
+                fontSize = 25.sp,
+                text = "Hot Offers \uD83D\uDD25",
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colors.secondary
+            )
         }
         Box(
             modifier = Modifier
@@ -156,7 +176,12 @@ fun HomePage(viewModel: GetYourSaleViewModel) {
                     .background(color = MaterialTheme.colors.primary)
             ) { page ->
                 val image = viewModel.offersList.value[page].image
-                Card(onClick = { /*TODO*/ }, elevation = 0.dp, backgroundColor = MaterialTheme.colors.primary) {
+                //url from backend
+                val urlParam =
+                    "https://www.zara.com/am/en/kids-editorial-10-l313.html?v1=2019990&utm_source=newsletter&utm_medium=email&utm_campaign=2022_04_05_Kids_Latitude_Norte"
+                Card(onClick = {
+                    uriHandler.openUri(urlParam)
+                }, elevation = 0.dp, backgroundColor = MaterialTheme.colors.primary) {
                     Image(
                         painter = rememberImagePainter(
                             data = image,
@@ -187,9 +212,14 @@ fun HomePage(viewModel: GetYourSaleViewModel) {
                 .padding(top = 48.dp, start = 10.dp, bottom = 20.dp),
             horizontalArrangement = Arrangement.Start
         ) {
-            Text(fontSize = 25.sp, text = "All Brands", fontWeight = FontWeight.SemiBold)
+            Text(
+                fontSize = 25.sp,
+                text = "All Brands",
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colors.secondary
+            )
         }
-        Divider(color = Color.DarkGray, thickness = 0.dp)
+        Divider(color = MaterialTheme.colors.secondary, thickness = 0.dp)
         LazyRow(
             modifier = Modifier
                 .fillMaxWidth()
@@ -205,14 +235,22 @@ fun HomePage(viewModel: GetYourSaleViewModel) {
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun SearchView(viewModel: GetYourSaleViewModel) {
-    val view = LocalView.current
     val keyboardController = LocalSoftwareKeyboardController.current
     val focusManager = LocalFocusManager.current
+    val onClicked: () -> Unit = {}
     LazyColumn(
         state = rememberLazyListState(),
         modifier = Modifier.heightIn(max = TextFieldDefaults.MinHeight * 6)
     ) {
         item {
+            DisposableEffect(key1 = onClicked) {
+                onDispose {
+                    keyboardController?.hide()
+                    focusManager.clearFocus(true)
+                    keyboardController?.hide()
+                    focusManager.clearFocus(true)
+                }
+            }
             TextField(
                 value = viewModel.searchText.value,
                 onValueChange = { value ->
@@ -254,15 +292,15 @@ fun SearchView(viewModel: GetYourSaleViewModel) {
                 },
                 singleLine = true,
                 colors = TextFieldDefaults.textFieldColors(
-                    textColor = Color.DarkGray,
-                    cursorColor = Color.DarkGray,
-                    leadingIconColor = Color.Black,
-                    trailingIconColor = Color.Black,
+                    textColor = MaterialTheme.colors.primaryVariant,
+                    cursorColor = MaterialTheme.colors.primaryVariant,
+                    leadingIconColor = MaterialTheme.colors.secondary,
+                    trailingIconColor = MaterialTheme.colors.secondary,
                     backgroundColor = Color.Transparent,
-                    focusedIndicatorColor = Color.LightGray,
-                    unfocusedIndicatorColor = Color.LightGray,
-                    disabledIndicatorColor = Color.LightGray,
-                    placeholderColor = Color.LightGray
+                    focusedIndicatorColor = MaterialTheme.colors.secondaryVariant,
+                    unfocusedIndicatorColor = MaterialTheme.colors.secondaryVariant,
+                    disabledIndicatorColor = MaterialTheme.colors.secondaryVariant,
+                    placeholderColor = MaterialTheme.colors.secondaryVariant
                 ),
                 keyboardActions = KeyboardActions(onDone = {
                     focusManager.clearFocus()
@@ -277,13 +315,12 @@ fun SearchView(viewModel: GetYourSaleViewModel) {
                         .padding(8.dp)
                         .fillMaxWidth()
                         .clickable {
-                            view.clearFocus()
+                            onClicked.invoke()
                             viewModel.setSelectedBrandName(brand)
-                            focusManager.clearFocus(true)
                             viewModel.navHostController?.navigate(Screen.BrandScreen.name)
                         }
                 ) {
-                    Text(brand, fontSize = 20.sp)
+                    Text(brand, fontSize = 20.sp, color = MaterialTheme.colors.secondary)
                 }
 
             }
@@ -297,17 +334,31 @@ fun Buttons(viewModel: GetYourSaleViewModel) {
         modifier = Modifier
             .fillMaxWidth()
             .padding(bottom = 16.dp)
-            .background(color = MaterialTheme.colors.primaryVariant), horizontalArrangement = Arrangement.SpaceBetween
+            .background(color = MaterialTheme.colors.primaryVariant),
+        horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        Text("Favorites ❤️ ", fontSize = 22.sp, color = Color.White, modifier = Modifier
-            .padding(start = 16.dp, bottom = 16.dp, top = 16.dp)
-            .align(
-                Alignment.CenterVertically
-            ), fontWeight = FontWeight.SemiBold)
+        Text(
+            "Favorites ❤️ ",
+            fontSize = 22.sp,
+            color = MaterialTheme.colors.primary,
+            modifier = Modifier
+                .padding(start = 16.dp, bottom = 16.dp, top = 16.dp)
+                .align(
+                    Alignment.CenterVertically
+                ),
+            fontWeight = FontWeight.SemiBold
+        )
         IconButton(
-            onClick = { viewModel.navHostController?.navigate(Screen.BrandEdition.name)  }, modifier = Modifier.align(
-                Alignment.CenterVertically)) {
-            Icon(Icons.Filled.Edit, contentDescription = "Edit", tint =  Color.White)
+            onClick = { viewModel.navHostController?.navigate(Screen.BrandEdition.name) },
+            modifier = Modifier.align(
+                Alignment.CenterVertically
+            )
+        ) {
+            Icon(
+                Icons.Filled.Edit,
+                contentDescription = "Edit",
+                tint = MaterialTheme.colors.primary
+            )
         }
     }
 }
@@ -361,7 +412,7 @@ fun Favorites(viewModel: GetYourSaleViewModel) {
                                     text = brandCard.name,
                                     modifier = Modifier.fillMaxSize(),
                                     textAlign = TextAlign.Left,
-                                    color = Color.Unspecified
+                                    color = MaterialTheme.colors.secondary
                                 )
                             }
                         }
@@ -386,20 +437,22 @@ fun Favorites(viewModel: GetYourSaleViewModel) {
     }
 }
 
+@OptIn(ExperimentalCoilApi::class, androidx.compose.material.ExperimentalMaterialApi::class)
 @Composable
 fun Notifications(viewModel: GetYourSaleViewModel) {
+    val screenWidth = LocalConfiguration.current.screenWidthDp.dp
     Column {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(bottom = 16.dp)
+                .padding(bottom = 10.dp)
                 .background(color = MaterialTheme.colors.primaryVariant),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Text(
                 "What's new \uD83C\uDF89 ",
                 fontSize = 22.sp,
-                color = Color.White,
+                color = MaterialTheme.colors.primary,
                 modifier = Modifier
                     .padding(start = 16.dp, bottom = 16.dp, top = 16.dp)
                     .align(
@@ -410,26 +463,106 @@ fun Notifications(viewModel: GetYourSaleViewModel) {
             IconButton(
                 onClick = { },
                 modifier = Modifier.align(
-                    Alignment.CenterVertically)
+                    Alignment.CenterVertically
+                )
             ) {
-                Icon(Icons.Filled.Notifications, contentDescription = "Done", tint = Color.White)
+                Icon(
+                    Icons.Filled.Notifications,
+                    contentDescription = "Done",
+                    tint = MaterialTheme.colors.primary
+                )
             }
         }
-        // after backend is set up, here will be some code for notifications
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 76.dp),
-            horizontalArrangement = Arrangement.Center
-        ) {
-            Text(
-                text = "Oops \uD83E\uDD2D, you have no news!",
-                color = Color.Gray,
-                fontSize = 20.sp,
-                textAlign = TextAlign.Center
-            )
+        if (viewModel.notifications.value.isNotEmpty()) {
+            LazyVerticalGrid(columns = GridCells.Fixed(1), reverseLayout = true, content = {
+                items(viewModel.notifications.value) { notification ->
+                    Card(onClick = {
+                        notification.stateRead = true
+                        viewModel.navHostController?.navigate(Screen.OfferScreen.name)
+                    }, backgroundColor = MaterialTheme.colors.primary) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 4.dp)
+                                .background(color = if (notification.stateRead) MaterialTheme.colors.primary else MaterialTheme.colors.secondaryVariant),
+                            horizontalArrangement = Arrangement.Start
+                        ) {
+                            Image(painter = rememberImagePainter(
+                                data = notification.image,
+                                builder = {
+                                    crossfade(false)
+                                    placeholder(R.drawable.placeholder)
+                                }
+                            ),
+                                contentDescription = notification.name,
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier
+                                    .size(screenWidth / 4)
+                                    .background(color = if (notification.stateRead) MaterialTheme.colors.primary else MaterialTheme.colors.secondaryVariant))
+                            Column(modifier = Modifier.padding(start = 16.dp)) {
+                                Text(
+                                    text = if (notification.stateRead) notification.name else notification.name + " \uD83D\uDD14",
+                                    fontWeight = if (notification.stateRead) null else FontWeight.Bold,
+                                    color = MaterialTheme.colors.secondary,
+                                    modifier = Modifier.padding(bottom = 8.dp, top = 8.dp)
+                                )
+                                Text(
+                                    text = notification.description,
+                                    color = MaterialTheme.colors.secondary,
+                                    modifier = Modifier.padding(bottom = 6.dp)
+                                )
+                                Text(
+                                    text = getTimeFromMilliesText(viewModel, System.currentTimeMillis() - notification.start),
+                                    color = if (notification.stateRead) MaterialTheme.colors.secondaryVariant else MaterialTheme.colors.surface,
+                                    fontSize = 13.sp
+                                )
+
+                            }
+                        }
+                    }
+                }
+            })
+        } else {
+            if (viewModel.isConnected.value) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 76.dp),
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Text(
+                        text = "Oops \uD83E\uDD2D, you have no news!",
+                        color = Color.Gray,
+                        fontSize = 20.sp,
+                        textAlign = TextAlign.Center
+                    )
+                }
+            } else {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 76.dp),
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Text(
+                        text = "Oops \uD83E\uDD2D, no internet connection.",
+                        color = Color.Gray,
+                        fontSize = 20.sp,
+                        textAlign = TextAlign.Center
+                    )
+                }
+            }
         }
     }
 }
 
-data class Offer(val image: String, val name: String)
+fun getTimeFromMilliesText(viewModel: GetYourSaleViewModel, currentTime: Long): String {
+    return when  {
+        currentTime/1000 < 60 -> "now"
+        currentTime/1000 >= 60 -> (currentTime/1000/60).toInt().toString() + "m"
+        currentTime/1000 >= 3600 -> (currentTime/1000/3600).toInt().toString() + "h"
+        currentTime/1000 >= 86400 -> (currentTime/1000/86400).toInt().toString() + "d"
+        currentTime/1000 >= 604800 -> (currentTime/1000/604800).toInt().toString() + "w"
+        else -> ""
+    }
+}

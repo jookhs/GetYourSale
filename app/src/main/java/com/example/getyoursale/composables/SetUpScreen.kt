@@ -24,7 +24,11 @@ fun SetUpScreen(viewModel: GetYourSaleViewModel) {
             horizontalArrangement = Arrangement.Start
         ) {
             IconButton(enabled = true, onClick = { viewModel.navHostController?.popBackStack() }) {
-                Icon(Icons.Filled.ArrowBack, contentDescription = "Back")
+                Icon(
+                    Icons.Filled.ArrowBack,
+                    contentDescription = "Back",
+                    tint = MaterialTheme.colors.secondary
+                )
             }
         }
         Row(
@@ -33,7 +37,7 @@ fun SetUpScreen(viewModel: GetYourSaleViewModel) {
                 .align(Alignment.Center),
             horizontalArrangement = Arrangement.Center
         ) {
-            Text("You're All Set Up!", color = Color.Black, fontSize = 50.sp)
+            Text("You're All Set Up!", color = MaterialTheme.colors.secondary, fontSize = 50.sp)
         }
         Row(
             modifier = Modifier
@@ -46,10 +50,10 @@ fun SetUpScreen(viewModel: GetYourSaleViewModel) {
                 shape = RoundedCornerShape(100),
                 onClick = { viewModel.navHostController?.navigate(Screen.HomePage.name) },
                 colors = ButtonDefaults.textButtonColors(
-                    backgroundColor = Color.Black
+                    backgroundColor = MaterialTheme.colors.secondary
                 )
             ) {
-                Text("      Done     ", color = Color.LightGray, fontSize = 20.sp)
+                Text("      Done     ", color = MaterialTheme.colors.primary, fontSize = 20.sp)
             }
         }
     }
