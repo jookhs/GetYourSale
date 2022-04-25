@@ -1,9 +1,6 @@
 package com.example.getyoursale
 
-import android.annotation.SuppressLint
-import android.content.Context
 import android.content.SharedPreferences
-import android.media.Image
 
 object SingleTon {
     var brands = mutableListOf<Brand>()
