@@ -77,4 +77,6 @@ dependencies {
     implementation 'com.facebook.fresco:fresco:2.6.0'
     implementation "com.facebook.fresco:imagepipeline-okhttp3:2.6.0"
     implementation 'com.jakewharton:process-phoenix:2.1.2'
+    implementation "io.insert-koin:koin-androidx-compose:$koin_version"
+    implementation "io.insert-koin:koin-android:$koin_version"
 }

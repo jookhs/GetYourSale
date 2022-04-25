@@ -2,21 +2,15 @@ package com.example.getyoursale
 
 import android.annotation.SuppressLint
 import android.content.SharedPreferences
-import android.graphics.drawable.GradientDrawable
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.toLowerCase
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavHostController
-import com.google.firebase.database.DatabaseReference
-import com.google.firebase.database.ktx.database
-import com.google.firebase.ktx.Firebase
+import com.example.getyoursale.usecase.NetworkUsecase
 
 const val SELECTED_CARDS = "selected cards"
 
-class GetYourSaleViewModel : ViewModel() {
+class GetYourSaleViewModel(private val networkUsecase: NetworkUsecase) : ViewModel() {
     private var _nextEnabled = mutableStateOf(false)
     val nextEnabled: State<Boolean> = _nextEnabled
     private var _selectedCards = mutableStateOf(listOf<String>())
@@ -41,7 +35,7 @@ class GetYourSaleViewModel : ViewModel() {
     private var _firstInstall = mutableStateOf(true)
     val firstInstall: State<Boolean> = _firstInstall
     var preferences: SharedPreferences? = null
-    private var _isConnected = mutableStateOf(true)
+    private var _isConnected = mutableStateOf(false)
     val isConnected: State<Boolean> = _isConnected
     var retryNetwork: () -> Unit = {}
     var notificationMessage: String? = null
@@ -49,6 +43,13 @@ class GetYourSaleViewModel : ViewModel() {
     val notifications: State<List<Notification>> = _notifications
     private var _notificationsOpened = mutableStateOf(false)
     val notificationsOpened: State<Boolean> = _notificationsOpened
+    var onNetworkChange: (Boolean) -> Unit = {
+        _isConnected.value = it
+    }
+
+    init {
+        networkUsecase.onNetworkChange(onNetworkChange)
+    }
 
     fun setNotificationsOpened(opened: Boolean) {
         _notificationsOpened.value = opened
@@ -78,8 +79,8 @@ class GetYourSaleViewModel : ViewModel() {
         }
     }
 
-    fun setIsConnected(isConnected: Boolean) {
-        _isConnected.value = isConnected
+    fun setConnection() {
+        _isConnected.value = networkUsecase.getNetwork()
     }
 
     fun postFirstInstall(firstInstall: Boolean) {

@@ -2,9 +2,9 @@ package com.example.getyoursale
 
 import android.annotation.SuppressLint
 import android.app.Application
-import android.content.Context
-import android.net.ConnectivityManager
 import android.preference.PreferenceManager
+import com.example.getyoursale.di.appModules
+import com.example.getyoursale.usecase.NetworkUsecase
 import com.google.firebase.FirebaseApp
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.ktx.database
@@ -13,6 +13,9 @@ import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.ListResult
 import kotlinx.coroutines.*
 import kotlinx.coroutines.tasks.await
+import org.koin.android.ext.android.get
+import org.koin.android.ext.koin.androidContext
+import org.koin.core.context.startKoin
 
 
 const val NOT_FIRST_RUN = "not first run"
@@ -29,18 +32,20 @@ class App : Application() {
     @OptIn(DelicateCoroutinesApi::class)
     override fun onCreate() {
         super.onCreate()
+        startKoin {
+            androidContext(this@App)
+            modules(appModules)
+        }
+        val network: NetworkUsecase = get()
         FirebaseApp.initializeApp(this)
         val storage = FirebaseStorage.getInstance().reference
         val database = Firebase.database.reference
         val coroutineContext = GlobalScope
         val context = this
-        val cm =
-            applicationContext.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-        val nInfo = cm.activeNetworkInfo
-        val connected = nInfo != null && nInfo.isAvailable && nInfo.isConnected
+        SingleTon.connected = network.getNetwork()
         val job = coroutineContext.launch {
             val preferences = PreferenceManager.getDefaultSharedPreferences(context)
-            if (connected) {
+            if (SingleTon.connected) {
                 val brandsListResult: ListResult = storage.child("Logos").listAll().await()
                 for (i in brandsListResult.items) {
                     val url = i.downloadUrl.await()
@@ -78,7 +83,6 @@ class App : Application() {
                     preferences.edit().putStringSet(OFFER_NAMES, SingleTon.cachedOfferNames.toSet())
                         .apply()
                 }
-                //will be modified
                 if (!preferences.getBoolean(NOT_FIRST_RUN, false)) {
                     SingleTon.firstInstall = true
                     preferences.edit().putBoolean(NOT_FIRST_RUN, true).apply()

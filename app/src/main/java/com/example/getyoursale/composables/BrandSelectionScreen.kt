@@ -144,7 +144,7 @@ fun Done(viewModel: GetYourSaleViewModel) {
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Text(
-            "Select Brands  ✨",
+            "Select Brands",
             fontSize = 22.sp,
             color = MaterialTheme.colors.primary,
             modifier = Modifier

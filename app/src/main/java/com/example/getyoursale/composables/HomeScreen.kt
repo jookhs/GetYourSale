@@ -19,6 +19,7 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
@@ -38,6 +39,7 @@ import com.google.accompanist.pager.ExperimentalPagerApi
 import com.google.accompanist.pager.HorizontalPager
 import com.google.accompanist.pager.rememberPagerState
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.yield
 
 @Composable
@@ -338,7 +340,7 @@ fun Buttons(viewModel: GetYourSaleViewModel) {
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Text(
-            "Favorites ❤️ ",
+            "Favourites",
             fontSize = 22.sp,
             color = MaterialTheme.colors.primary,
             modifier = Modifier
@@ -441,16 +443,18 @@ fun Favorites(viewModel: GetYourSaleViewModel) {
 @Composable
 fun Notifications(viewModel: GetYourSaleViewModel) {
     val screenWidth = LocalConfiguration.current.screenWidthDp.dp
-    Column {
+    val listState = rememberLazyListState()
+    val coroutineScope = rememberCoroutineScope()
+    Column (modifier = Modifier.fillMaxWidth().wrapContentHeight()) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(bottom = 10.dp)
+                .padding(bottom = 6.dp)
                 .background(color = MaterialTheme.colors.primaryVariant),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Text(
-                "What's new \uD83C\uDF89 ",
+                "Notifications",
                 fontSize = 22.sp,
                 color = MaterialTheme.colors.primary,
                 modifier = Modifier
@@ -473,8 +477,11 @@ fun Notifications(viewModel: GetYourSaleViewModel) {
                 )
             }
         }
+        Text(text = "What's new", fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colors.secondary, fontSize = 16.sp, modifier = Modifier.padding(bottom = 6.dp, start = 16.dp))
+        Divider(color = MaterialTheme.colors.secondary, thickness = 0.dp, modifier = Modifier.padding(bottom = 6.dp))
         if (viewModel.notifications.value.isNotEmpty()) {
-            LazyVerticalGrid(columns = GridCells.Fixed(1), reverseLayout = true, content = {
+            LazyColumn(state = listState, reverseLayout = true, verticalArrangement = Arrangement.Top, content = {
                 items(viewModel.notifications.value) { notification ->
                     Card(onClick = {
                         notification.stateRead = true
@@ -498,6 +505,7 @@ fun Notifications(viewModel: GetYourSaleViewModel) {
                                 contentScale = ContentScale.Crop,
                                 modifier = Modifier
                                     .size(screenWidth / 4)
+                                    .padding(start = 8.dp)
                                     .background(color = if (notification.stateRead) MaterialTheme.colors.primary else MaterialTheme.colors.secondaryVariant))
                             Column(modifier = Modifier.padding(start = 16.dp)) {
                                 Text(
@@ -519,6 +527,11 @@ fun Notifications(viewModel: GetYourSaleViewModel) {
 
                             }
                         }
+                    }
+                }
+                coroutineScope.launch {
+                    if (!listState.isScrollInProgress) {
+                        listState.scrollToItem(viewModel.notifications.value.lastIndex)
                     }
                 }
             })
@@ -559,9 +572,9 @@ fun Notifications(viewModel: GetYourSaleViewModel) {
 fun getTimeFromMilliesText(viewModel: GetYourSaleViewModel, currentTime: Long): String {
     return when  {
         currentTime/1000 < 60 -> "now"
-        currentTime/1000 >= 60 -> (currentTime/1000/60).toInt().toString() + "m"
-        currentTime/1000 >= 3600 -> (currentTime/1000/3600).toInt().toString() + "h"
-        currentTime/1000 >= 86400 -> (currentTime/1000/86400).toInt().toString() + "d"
+        currentTime/1000 in 60..3599 -> (currentTime/1000/60).toInt().toString() + "m"
+        currentTime/1000 in 3600..86399 -> (currentTime/1000/3600).toInt().toString() + "h"
+        currentTime/1000 in 86400..604799 -> (currentTime/1000/86400).toInt().toString() + "d"
         currentTime/1000 >= 604800 -> (currentTime/1000/604800).toInt().toString() + "w"
         else -> ""
     }

@@ -15,4 +15,5 @@ object SingleTon {
     var firstInstall = true
     var preferences: SharedPreferences? = null
     var notifications = mutableListOf<Notification>()
+    var connected = false
 }
