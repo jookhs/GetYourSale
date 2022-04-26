@@ -7,6 +7,10 @@ import android.net.NetworkCapabilities
 import android.net.NetworkRequest
 import android.os.Build
 import androidx.annotation.RequiresApi
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.flow
 
 class NetworkRepoImpl(val context: Context): NetworkRepository {
     @RequiresApi(Build.VERSION_CODES.M)
@@ -18,32 +22,37 @@ class NetworkRepoImpl(val context: Context): NetworkRepository {
     }
 
     @RequiresApi(Build.VERSION_CODES.M)
-    override fun onNetworkChange(isConnected: (Boolean) -> Unit) {
-        val connectivityManager =
-            context.getSystemService(ConnectivityManager::class.java) as ConnectivityManager
-        val networkRequest = NetworkRequest.Builder()
-            .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
-            .addTransportType(NetworkCapabilities.TRANSPORT_WIFI)
-            .addTransportType(NetworkCapabilities.TRANSPORT_CELLULAR)
-            .build()
-        val networkCallback = object : ConnectivityManager.NetworkCallback() {
-            override fun onAvailable(network: Network) {
-                super.onAvailable(network)
-                isConnected.invoke(true)
-            }
+    override fun onNetworkChange(): Flow<Boolean> {
+        return callbackFlow<Boolean> {
+            val connectivityManager =
+                context.getSystemService(ConnectivityManager::class.java) as ConnectivityManager
+            val networkRequest = NetworkRequest.Builder()
+                .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+                .addTransportType(NetworkCapabilities.TRANSPORT_WIFI)
+                .addTransportType(NetworkCapabilities.TRANSPORT_CELLULAR)
+                .build()
 
-            override fun onCapabilitiesChanged(
-                network: Network,
-                networkCapabilities: NetworkCapabilities
-            ) {
-                super.onCapabilitiesChanged(network, networkCapabilities)
-            }
+            val networkCallback = object : ConnectivityManager.NetworkCallback() {
+                override fun onAvailable(network: Network) {
+                    super.onAvailable(network)
+                    trySend(true)
+                }
 
-            override fun onLost(network: Network) {
-                super.onLost(network)
-                isConnected.invoke(true)
+                override fun onCapabilitiesChanged(
+                    network: Network,
+                    networkCapabilities: NetworkCapabilities
+                ) {
+                    super.onCapabilitiesChanged(network, networkCapabilities)
+                }
+
+                override fun onLost(network: Network) {
+                    super.onLost(network)
+                    trySend(false)
+                }
             }
+            connectivityManager.requestNetwork(networkRequest, networkCallback)
+            awaitClose { }
         }
-        connectivityManager.requestNetwork(networkRequest, networkCallback)
     }
+
 }

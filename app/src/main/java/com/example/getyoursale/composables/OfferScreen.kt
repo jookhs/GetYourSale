@@ -34,8 +34,6 @@ import java.util.*
 @Composable
 fun OfferScreen(viewModel: GetYourSaleViewModel) {
     val uriHandler = LocalUriHandler.current
-    val urlParam =
-        "https://www.zara.com/am/en/kids-editorial-10-l313.html?v1=2019990&utm_source=newsletter&utm_medium=email&utm_campaign=2022_04_05_Kids_Latitude_Norte"
     val screenWidth = LocalConfiguration.current.screenWidthDp.dp
     Column {
         Row(
@@ -61,7 +59,7 @@ fun OfferScreen(viewModel: GetYourSaleViewModel) {
             }
             // same as in notification header from backend
             Text(
-                "ZARA",
+                viewModel.notificationMessage,
                 fontSize = 22.sp,
                 color = MaterialTheme.colors.primary,
                 modifier = Modifier
@@ -82,10 +80,10 @@ fun OfferScreen(viewModel: GetYourSaleViewModel) {
                 painter = rememberImagePainter(
                     data = viewModel.offersList.value.find {
                         it.image.lowercase()
-                            .contains("zara")
+                            .contains(viewModel.notificationMessage.lowercase())
                     }?.image
                 ),
-                contentDescription = "ZARA",
+                contentDescription = viewModel.notificationMessage,
                 contentScale = ContentScale.Crop,
                 modifier = Modifier
                     .size((screenWidth - 160.dp))
@@ -100,23 +98,32 @@ fun OfferScreen(viewModel: GetYourSaleViewModel) {
                 .padding(bottom = 16.dp),
             horizontalArrangement = Arrangement.Center
         ) {
-            Text(
-                text = "20% off is the golden ticket!",
-                fontWeight = FontWeight.SemiBold,
-                textAlign = TextAlign.Center,
-                color = MaterialTheme.colors.secondary,
-                fontSize = 24.sp,
-            )
+            //Notification description
+            viewModel.notifications.value.find { it.name == viewModel.notificationMessage }?.description?.let {
+                Text(
+                    text = it,
+                    fontWeight = FontWeight.SemiBold,
+                    textAlign = TextAlign.Center,
+                    color = MaterialTheme.colors.secondary,
+                    fontSize = 24.sp,
+                )
+            }
         }
-        Button(
-            onClick = { uriHandler.openUri(urlParam) },
-            shape = RoundedCornerShape(100),
-            colors = ButtonDefaults.textButtonColors(
-                backgroundColor = MaterialTheme.colors.secondary
-            ),
-            modifier = Modifier.align(Alignment.CenterHorizontally)
-        ) {
-            Text(text = "Catch the offer!", color = MaterialTheme.colors.primary, fontSize = 20.sp)
+        viewModel.notifications.value.find { it.name == viewModel.notificationMessage }?.url?.let {
+            Button(
+                onClick = { uriHandler.openUri(it) },
+                shape = RoundedCornerShape(100),
+                colors = ButtonDefaults.textButtonColors(
+                    backgroundColor = MaterialTheme.colors.secondary
+                ),
+                modifier = Modifier.align(Alignment.CenterHorizontally)
+            ) {
+                Text(
+                    text = "Catch the offer!",
+                    color = MaterialTheme.colors.primary,
+                    fontSize = 20.sp
+                )
+            }
         }
     }
 }

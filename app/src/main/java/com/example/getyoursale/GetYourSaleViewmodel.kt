@@ -5,8 +5,10 @@ import android.content.SharedPreferences
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavHostController
 import com.example.getyoursale.usecase.NetworkUsecase
+import kotlinx.coroutines.launch
 
 const val SELECTED_CARDS = "selected cards"
 
@@ -38,17 +40,18 @@ class GetYourSaleViewModel(private val networkUsecase: NetworkUsecase) : ViewMod
     private var _isConnected = mutableStateOf(false)
     val isConnected: State<Boolean> = _isConnected
     var retryNetwork: () -> Unit = {}
-    var notificationMessage: String? = null
+    var notificationMessage: String = ""
     private var _notifications = mutableStateOf(listOf<Notification>())
     val notifications: State<List<Notification>> = _notifications
     private var _notificationsOpened = mutableStateOf(false)
     val notificationsOpened: State<Boolean> = _notificationsOpened
-    var onNetworkChange: (Boolean) -> Unit = {
-        _isConnected.value = it
-    }
 
     init {
-        networkUsecase.onNetworkChange(onNetworkChange)
+        viewModelScope.launch {
+            networkUsecase.onNetworkChange().collect() {
+                _isConnected.value = it
+            }
+        }
     }
 
     fun setNotificationsOpened(opened: Boolean) {

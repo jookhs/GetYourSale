@@ -178,9 +178,7 @@ fun HomePage(viewModel: GetYourSaleViewModel) {
                     .background(color = MaterialTheme.colors.primary)
             ) { page ->
                 val image = viewModel.offersList.value[page].image
-                //url from backend
-                val urlParam =
-                    "https://www.zara.com/am/en/kids-editorial-10-l313.html?v1=2019990&utm_source=newsletter&utm_medium=email&utm_campaign=2022_04_05_Kids_Latitude_Norte"
+                val urlParam = viewModel.offersList.value[page].url
                 Card(onClick = {
                     uriHandler.openUri(urlParam)
                 }, elevation = 0.dp, backgroundColor = MaterialTheme.colors.primary) {
@@ -485,6 +483,7 @@ fun Notifications(viewModel: GetYourSaleViewModel) {
                 items(viewModel.notifications.value) { notification ->
                     Card(onClick = {
                         notification.stateRead = true
+                        viewModel.notificationMessage = notification.name
                         viewModel.navHostController?.navigate(Screen.OfferScreen.name)
                     }, backgroundColor = MaterialTheme.colors.primary) {
                         Row(

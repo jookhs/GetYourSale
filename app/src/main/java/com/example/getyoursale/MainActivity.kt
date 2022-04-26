@@ -73,7 +73,8 @@ class MainActivity : ComponentActivity() {
                     database.child("offers").child("ZARA$i").setValue(
                         Notification(
                             viewModel.offersList.value[a].image, "ZARA$i",
-                            "20% off is the golden ticket!", start = System.currentTimeMillis()
+                            "20% off is the golden ticket!", start = System.currentTimeMillis(),
+                            url = "https://www.zara.com/am/en/kids-editorial-10-l313.html?v1=2019990&utm_source=newsletter&utm_medium=email&utm_campaign=2022_04_05_Kids_Latitude_Norte"
                         )
                     )
                 }
@@ -93,7 +94,8 @@ class MainActivity : ComponentActivity() {
                                    it,
                                    "ZARA",
                                    "20% off is the golden ticket!",
-                                   start = System.currentTimeMillis()
+                                   start = System.currentTimeMillis(),
+                                   url = "https://www.zara.com/am/en/kids-editorial-10-l313.html?v1=2019990&utm_source=newsletter&utm_medium=email&utm_campaign=2022_04_05_Kids_Latitude_Norte"
                                )
                            )
                        }
@@ -127,7 +129,8 @@ class MainActivity : ComponentActivity() {
             for (l in 0 until size) {
                 val notification = savedInstanceState.getStringArray(NOTIFICATIONS + l)
                 if (notification != null && viewModel.selectedCards.value.contains("ZARA")) {
-                    viewModel.addToNotifications(Notification(notification[0], notification[1], notification[2], start = notification[3].toLong()))
+                    viewModel.addToNotifications(Notification(notification[0], notification[1], notification[2], start = notification[3].toLong(), url = notification[4]
+                    ))
                 }
             }
         }
@@ -170,7 +173,7 @@ class MainActivity : ComponentActivity() {
                             Screen.NoNetworkScreen.name
                         }
                     } else {
-                        if (viewModel.notificationMessage != null) {
+                        if (viewModel.notificationMessage != "") {
                             Screen.OfferScreen.name
                         } else {
                             Screen.HomePage.name
@@ -209,7 +212,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onNewIntent(intent: Intent?) {
         super.onNewIntent(intent)
-        viewModel.notificationMessage = intent?.extras?.getString("Notification", null)
+        viewModel.notificationMessage = intent?.extras?.getString("Notification", null) ?: ""
     }
 
     @SuppressLint("CommitPrefEdits")
@@ -218,7 +221,7 @@ class MainActivity : ComponentActivity() {
         outState.putString(SELECTED_CARD_NAME, viewModel.selectedBrandName.value)
         outState.putInt(NOTIFICATIONS_SIZE, viewModel.notifications.value.size)
         viewModel.notifications.value.forEach {
-            val set = listOf(it.image, it.name, it.description, it.start.toString())
+            val set = listOf(it.image, it.name, it.description, it.start.toString(), it.url)
             outState.putStringArray(NOTIFICATIONS + viewModel.notifications.value.indexOf(it), set.toTypedArray())
         }
     }

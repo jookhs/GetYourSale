@@ -4,6 +4,8 @@ import android.annotation.SuppressLint
 import android.app.Application
 import android.preference.PreferenceManager
 import com.example.getyoursale.di.appModules
+import com.example.getyoursale.repo.ApiRepo
+import com.example.getyoursale.repo.RetrofitApi
 import com.example.getyoursale.usecase.NetworkUsecase
 import com.google.firebase.FirebaseApp
 import com.google.firebase.database.DataSnapshot
@@ -16,6 +18,9 @@ import kotlinx.coroutines.tasks.await
 import org.koin.android.ext.android.get
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.context.startKoin
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
 
 
 const val NOT_FIRST_RUN = "not first run"
@@ -43,6 +48,17 @@ class App : Application() {
         val coroutineContext = GlobalScope
         val context = this
         SingleTon.connected = network.getNetwork()
+//        val retrofitApi: RetrofitApi = get()
+//        val apiInterface = retrofitApi.createNetworkApi().getOffers()
+//        apiInterface.enqueue( object : Callback<List<Notification>> {
+//            override fun onResponse(call: Call<List<Notification>>?, response: Response<List<Notification>>?) {
+//                if (response?.body() != null)
+//                    SingleTon.notifications = response.body() as MutableList<Notification>
+//            }
+//            override fun onFailure(call: Call<List<Notification>>?, t: Throwable?) {
+//                //throw exception
+//            }
+//        })
         val job = coroutineContext.launch {
             val preferences = PreferenceManager.getDefaultSharedPreferences(context)
             if (SingleTon.connected) {
@@ -70,11 +86,14 @@ class App : Application() {
                     if (!SingleTon.offers.contains(
                             Offer(
                                 url.toString(),
-                                i.name.split(".").first()
+                                i.name.split(".").first(),
+                                "https://www.zara.com/am/en/kids-editorial-10-l313.html?v1=2019990&utm_source=newsletter&utm_medium=email&utm_campaign=2022_04_05_Kids_Latitude_Norte"
                             )
                         )
                     ) {
-                        SingleTon.offers.add(Offer(url.toString(), i.name.split(".").first()))
+                        SingleTon.offers.add(Offer(url.toString(), i.name.split(".").first(),
+                            "https://www.zara.com/am/en/kids-editorial-10-l313.html?v1=2019990&utm_source=newsletter&utm_medium=email&utm_campaign=2022_04_05_Kids_Latitude_Norte"
+                        ))
                         SingleTon.cachedOfferUrls.add(url.toString())
                         SingleTon.cachedOfferNames.add(i.name.split(".").first())
                     }
@@ -97,7 +116,8 @@ class App : Application() {
                                     notification["name"].toString(),
                                     notification["description"].toString(),
                                     notification["stateRead"] as Boolean,
-                                    notification["start"] as Long
+                                    notification["start"] as Long,
+                                    "https://www.zara.com/am/en/kids-editorial-10-l313.html?v1=2019990&utm_source=newsletter&utm_medium=email&utm_campaign=2022_04_05_Kids_Latitude_Norte"
                                 )
                             )
                         }
@@ -129,7 +149,9 @@ class App : Application() {
                             offer.contains(it)
                         }
                         if (name != null) {
-                            SingleTon.offers.add(Offer(offer.toString(), name.split(".").first()))
+                            SingleTon.offers.add(Offer(offer.toString(), name.split(".").first(),
+                                "https://www.zara.com/am/en/kids-editorial-10-l313.html?v1=2019990&utm_source=newsletter&utm_medium=email&utm_campaign=2022_04_05_Kids_Latitude_Norte"
+                            ))
                         }
                     }
                 }

@@ -1,7 +1,9 @@
 package com.example.getyoursale.repo
 
+import kotlinx.coroutines.flow.Flow
+
 
 interface NetworkRepository {
     fun getNetwork(): Boolean
-    fun onNetworkChange(isConnected: (Boolean) -> Unit)
+    fun onNetworkChange(): Flow<Boolean>
 }
