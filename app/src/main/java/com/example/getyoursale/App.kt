@@ -105,7 +105,10 @@ class App : Application() {
                 if (!preferences.getBoolean(NOT_FIRST_RUN, false)) {
                     SingleTon.firstInstall = true
                     preferences.edit().putBoolean(NOT_FIRST_RUN, true).apply()
+                    // will be removed
+                    database.setValue(null)
                 } else {
+                    // will be modified
                     val notificationResult: DataSnapshot = database.child("offers").get().await()
                     if (notificationResult.exists()) {
                         (notificationResult.value as HashMap<*, *>).forEach {
@@ -117,7 +120,7 @@ class App : Application() {
                                     notification["description"].toString(),
                                     notification["stateRead"] as Boolean,
                                     notification["start"] as Long,
-                                    "https://www.zara.com/am/en/kids-editorial-10-l313.html?v1=2019990&utm_source=newsletter&utm_medium=email&utm_campaign=2022_04_05_Kids_Latitude_Norte"
+                                    notification["url"].toString()
                                 )
                             )
                         }

@@ -62,10 +62,6 @@ class GetYourSaleViewModel(private val networkUsecase: NetworkUsecase) : ViewMod
         _notifications.value = _notifications.value.toMutableList().apply {
             add(notification)
         }
-        val notificationNames = mutableListOf<String>()
-        notifications.value.forEach {
-            notificationNames.add(it.name)
-        }
     }
 
     private fun removeFromNotificationsListIfNeeded(name: String) {
@@ -75,10 +71,6 @@ class GetYourSaleViewModel(private val networkUsecase: NetworkUsecase) : ViewMod
                     remove(it)
                 }
             }
-        }
-        val notificationNames = mutableListOf<String>()
-        notifications.value.forEach {
-            notificationNames.add(it.name)
         }
     }
 
@@ -141,10 +133,6 @@ class GetYourSaleViewModel(private val networkUsecase: NetworkUsecase) : ViewMod
 
     fun postBrandsToList(brands: List<Brand>) {
         _brandList.value = brands
-    }
-
-    fun postNotificationsToList(notifications: List<Notification>) {
-        _notifications.value = notifications
     }
 
     fun postOffersToList(offers: List<Offer>) {

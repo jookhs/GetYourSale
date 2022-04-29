@@ -55,9 +55,6 @@ class MainActivity : ComponentActivity() {
         viewModel.postFirstInstall(SingleTon.firstInstall)
         viewModel.postBrandsToList(SingleTon.brands)
         viewModel.postOffersToList(SingleTon.offers)
-        if (viewModel.selectedCards.value.contains("ZARA")) {
-            viewModel.postNotificationsToList(SingleTon.notifications)
-        }
         viewModel.preferences = SingleTon.preferences
 
         //will be replaced once backend's ready
@@ -122,19 +119,6 @@ class MainActivity : ComponentActivity() {
         database.addValueEventListener(databaseListener)
         //
 
-        if (savedInstanceState != null) {
-            savedInstanceState.getString(SELECTED_CARD_NAME)
-                ?.let { viewModel.setSelectedBrandName(it) }
-            val size = savedInstanceState.getInt(NOTIFICATIONS_SIZE)
-            for (l in 0 until size) {
-                val notification = savedInstanceState.getStringArray(NOTIFICATIONS + l)
-                if (notification != null && viewModel.selectedCards.value.contains("ZARA")) {
-                    viewModel.addToNotifications(Notification(notification[0], notification[1], notification[2], start = notification[3].toLong(), url = notification[4]
-                    ))
-                }
-            }
-        }
-
         viewModel.brandList.value.forEach { brand ->
             if (viewModel.preferences?.getStringSet(SELECTED_CARDS, null)
                     ?.contains(brand.name) == true
@@ -142,18 +126,35 @@ class MainActivity : ComponentActivity() {
                 viewModel.addToSelectedCards(brand.name)
             }
         }
-
-        val orientation = resources.configuration.orientation
-        val screenLayoutSize =
-            resources.configuration.screenLayout and Configuration.SCREENLAYOUT_SIZE_MASK
-        if (screenLayoutSize != Configuration.SCREENLAYOUT_SIZE_SMALL && screenLayoutSize != Configuration.SCREENLAYOUT_SIZE_NORMAL) {
-            requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_USER
-        } else {
-            if (orientation != Configuration.ORIENTATION_PORTRAIT) {
-                requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+        SingleTon.notifications.forEach {
+            if (viewModel.selectedCards.value.find { value -> it.name.contains(value)} != null) {
+                viewModel.addToNotifications(it)
             }
         }
-        viewModel.setOrientation(orientation, requestedOrientation)
+        if (savedInstanceState != null) {
+            savedInstanceState.getString(SELECTED_CARD_NAME)
+                ?.let { viewModel.setSelectedBrandName(it) }
+            val size = savedInstanceState.getInt(NOTIFICATIONS_SIZE)
+            for (l in 0 until size) {
+                val notification = savedInstanceState.getStringArray(NOTIFICATIONS + l)
+                if (notification != null && viewModel.selectedCards.value.contains(notification[1])) {
+                    viewModel.addToNotifications(Notification(notification[0], notification[1], notification[2], start = notification[3].toLong(), stateRead = notification[4].toBoolean(), url = notification[5]
+                    ))
+                }
+            }
+        }
+
+//        val orientation = resources.configuration.orientation
+//        val screenLayoutSize =
+//            resources.configuration.screenLayout and Configuration.SCREENLAYOUT_SIZE_MASK
+//        if (screenLayoutSize != Configuration.SCREENLAYOUT_SIZE_SMALL && screenLayoutSize != Configuration.SCREENLAYOUT_SIZE_NORMAL) {
+//            requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_USER
+//        } else {
+//            if (orientation != Configuration.ORIENTATION_PORTRAIT) {
+//                requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+//            }
+//        }
+//        viewModel.setOrientation(orientation, requestedOrientation)
 
         installSplashScreen()
 
@@ -173,7 +174,7 @@ class MainActivity : ComponentActivity() {
                             Screen.NoNetworkScreen.name
                         }
                     } else {
-                        if (viewModel.notificationMessage != "") {
+                        if (viewModel.notificationMessage != "" && viewModel.notificationMessage != "null") {
                             Screen.OfferScreen.name
                         } else {
                             Screen.HomePage.name
@@ -212,7 +213,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onNewIntent(intent: Intent?) {
         super.onNewIntent(intent)
-        viewModel.notificationMessage = intent?.extras?.getString("Notification", null) ?: ""
+        viewModel.notificationMessage = intent?.extras?.getString("Notification", "") ?: ""
     }
 
     @SuppressLint("CommitPrefEdits")
@@ -221,7 +222,7 @@ class MainActivity : ComponentActivity() {
         outState.putString(SELECTED_CARD_NAME, viewModel.selectedBrandName.value)
         outState.putInt(NOTIFICATIONS_SIZE, viewModel.notifications.value.size)
         viewModel.notifications.value.forEach {
-            val set = listOf(it.image, it.name, it.description, it.start.toString(), it.url)
+            val set = listOf(it.image, it.name, it.description, it.start.toString(), it.stateRead.toString(), it.url)
             outState.putStringArray(NOTIFICATIONS + viewModel.notifications.value.indexOf(it), set.toTypedArray())
         }
     }

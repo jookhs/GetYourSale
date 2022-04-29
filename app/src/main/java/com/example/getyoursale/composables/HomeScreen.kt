@@ -479,9 +479,10 @@ fun Notifications(viewModel: GetYourSaleViewModel) {
             color = MaterialTheme.colors.secondary, fontSize = 16.sp, modifier = Modifier.padding(bottom = 6.dp, start = 16.dp))
         Divider(color = MaterialTheme.colors.secondary, thickness = 0.dp, modifier = Modifier.padding(bottom = 6.dp))
         if (viewModel.notifications.value.isNotEmpty()) {
-            LazyColumn(state = listState, reverseLayout = true, verticalArrangement = Arrangement.Top, content = {
+            LazyColumn(state = listState, reverseLayout = true, verticalArrangement = Arrangement.Top, modifier = Modifier.padding(bottom = 48.dp), content = {
                 items(viewModel.notifications.value) { notification ->
                     Card(onClick = {
+                        //change state in db also
                         notification.stateRead = true
                         viewModel.notificationMessage = notification.name
                         viewModel.navHostController?.navigate(Screen.OfferScreen.name)
